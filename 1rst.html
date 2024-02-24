@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planets Directory</title>
+  <style>
+    /* Basic styling */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #739072;
+    }
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .card {
+      background-color: #DBCC95;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      width: 400px;
+    
+    }
+    .card:hover {
+      background-color: #C3E2C2;
+    }
+    .resident {
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Planets Directory</h1>
+    <div id="planets"></div>
+    <div id="pagination"></div>
+  </div>
+
+  <script>
+    let currentPage = 1;
+
+    async function fetchPlanets(url) {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data;
+    }
+
+    async function renderPlanets(url) {
+      const planetsDiv = document.getElementById('planets');
+      planetsDiv.innerHTML = '';
+
+      const data = await fetchPlanets(url);
+      data.results.forEach(planet => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.innerHTML = `
+          <h2>${planet.name}</h2>
+          <p><strong>Climate:</strong> ${planet.climate}</p>
+          <p><strong>Population:</strong> ${planet.population}</p>
+          <p><strong>Terrain:</strong> ${planet.terrain}</p>
+          <div class="residents" id="residents-${planet.name.replace(/\s/g, '-')}"></div>
+        `;
+        planetsDiv.appendChild(card);
+
+        renderResidents(planet.residents, planet.name);
+      });
+
+      renderPagination(data);
+    }
+
+    async function renderResidents(residentsUrls, planetName) {
+      const residentsDiv = document.getElementById(`residents-${planetName.replace(/\s/g, '-')}`);
+
+      for (const url of residentsUrls) {
+        const residentData = await fetchPlanets(url);
+        const resident = document.createElement('div');
+        resident.classList.add('resident');
+        resident.innerHTML = `
+          <p><strong>Name:</strong> ${residentData.name}</p>
+          <p><strong>Height:</strong> ${residentData.height}</p>
+          <p><strong>Mass:</strong> ${residentData.mass}</p>
+          <p><strong>Gender:</strong> ${residentData.gender}</p>
+        `;
+        residentsDiv.appendChild(resident);
+      }
+    }
+
+    function renderPagination(data) {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      const prevButton = document.createElement('button');
+      prevButton.textContent = 'Previous';
+      prevButton.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderPlanets(`https://swapi.dev/api/planets/?page=${currentPage}`);
+        }
+      });
+      paginationDiv.appendChild(prevButton);
+
+      const nextButton = document.createElement('button');
+      nextButton.textContent = 'Next';
+      nextButton.addEventListener('click', () => {
+        if (currentPage < data.count / data.results.length) {
+          currentPage++;
+          renderPlanets(`https://swapi.dev/api/planets/?page=${currentPage}`);
+        }
+      });
+      paginationDiv.appendChild(nextButton);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderPlanets('https://swapi.dev/api/planets/');
+    });
+  </script>
+</body>
+</html>
